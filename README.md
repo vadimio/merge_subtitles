@@ -2,7 +2,7 @@
 Merge a list of subtitle files in a .srt or .vtt format based on a timestamp to make chat like txt file.
 
 # Warning
-Only the .VTT has been tests. I do not have .SRT transcriptions yet. Will update as soon as I am done
+Only the .VTT has been tested. I do not have .SRT transcriptions yet. Will update as soon as I am done
 
 # Usage
 ## usage: merge_srt.py [-h] [--log {debug,info,warning,error,critical}] [--merged_output MERGED_OUTPUT] [--neat] file_list [file_list ...]
