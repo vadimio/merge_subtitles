@@ -18,6 +18,7 @@ import os
 import re
 
 vtt_pattern = re.compile(r"(\d{2}:\d{2}(:\d{2})?.\d{3}) --> (\d{2}:\d{2}(:\d{2})?.\d{3})\n(.*\n)", re.MULTILINE )
+srt_pattern = re.compile(r"(^\d+$)\n^(\d\d:[0-5]\d:[0-5]\d,\d{1,3}) --> (\d\d:[0-5]\d:[0-5]\d,\d{1,3})$\n((?:^.+$\n?)+)", re.MULTILINE)
 
 def merge_same_speaker_lines(lines: List)-> List:
     """
@@ -62,19 +63,24 @@ def merge_files(file_list: List[str], merged_file_path: str, neat: bool) -> None
         logging.info(f"Parsing file {file_name} for user {user_name}")
         with open(file_name, "r", newline='\n') as rf:
             file_lines = rf.readlines()
+            joined = ''.join(file_lines)
 
             if file_name.endswith('.srt'):
-                for i in range(0, len(file_lines), 3):
-                    timestamp = file_lines[i].strip()
-                    text = file_lines[i+1].strip()
-                    lines.append((timestamp, f"[{user_name}]: " + text))
+                # for i in range(0, len(file_lines), 3):
+                #     timestamp = file_lines[i].strip()
+                #     text = file_lines[i+1].strip()
+                #     lines.append((timestamp, user_name, text))
+                for match in re.finditer(srt_pattern, joined):
+                    if match:
+                        # We are skipping group 1 - Serial number
+                        timestamp = match.group(2)
+                        text = match.group(4)
+                        lines.append((timestamp, user_name, text))
             elif file_name.endswith('.vtt'):
-                joined = ''.join(file_lines)
-
                 for match in re.finditer(vtt_pattern, joined):
                     if match:
                         timestamp = match.group(1)
-                        text = match.group(5)
+                        text = match.group()
                         lines.append((timestamp, user_name, text))
             else:
                 logging.warning(f"Encountered file {file_name} with an unsupported format. Only .srt and .vtt are supported.")
@@ -112,7 +118,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Merge multiple files with prefixing user name')
     parser.add_argument("--log", default="warning", choices=["debug", "info", "warning", "error", "critical"])
     parser.add_argument('file_list', type=str, nargs='+', help='List of files in the format <user name> from <file name>')
-    parser.add_argument('--merged_output', type=str, default=None, help='File path/name for the merge text. If set undefined, it will be save to ./output/<first file name> + names of all users')
+    parser.add_argument('--merged_output', type=str, default=None, help='File path/name for the merge text. If set undefined, it will be saved to ./output/<first file name>_user1_...userN.txt')
     parser.add_argument("--neat", action='store_true', help="When present, consequetive lines spoken by the same person will be merged together for easier reading. Otherwise each line will be separately prepended with user name")
     args = parser.parse_args()
 
